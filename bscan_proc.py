@@ -68,12 +68,9 @@ except json.decoder.JSONDecodeError:
     cached_bsdl_json_file = os.path.abspath(os.path.join(cachedir, f'{bname}.json'))
     if not os.path.isfile(cached_bsdl_json_file):
         logging.info(f"{cached_bsdl_json_file} not found in cache... Lets's parse original.")
-        # This original BSDL file has not been parsed yet...
-        cmdlist = ['python3', bsdl_parser.bsdl2json.__file__, bsdl_file, '-o', cached_bsdl_json_file]
-        logging.info(f"Executing: {' '.join(cmdlist)}")
-        p = subprocess.Popen(cmdlist)
-        p.wait()
-
+        logging.info(f"Calling bsdl2json({bsdl_file}, {cached_bsdl_json_file})")
+        bsdl_parser.bsdl2json.bsdl2json(bsdl_file, cached_bsdl_json_file)
+        
     with open(cached_bsdl_json_file) as json_file:
         logging.info(f"{cached_bsdl_json_file} json has found in the cace.")
         data = json.load(json_file)
@@ -86,17 +83,19 @@ except json.decoder.JSONDecodeError:
 data['optional_register_description'] = {k: v for d in data['optional_register_description'] for k, v in d.items()}
 id_code = ''.join(data['optional_register_description']['idcode_register'])
 logging.debug(f'IDCODE: {id_code}')
-ir_length = data['instruction_register_description']['instruction_length']
+ir_length = int(data['instruction_register_description']['instruction_length'])
 logging.debug(f'IRLENGTH: {ir_length}')
+boundary_length = int(data['boundary_scan_register_description']['fixed_boundary_stmts']['boundary_length'])
+logging.debug(f'BOUNDARY_LENGTH: {boundary_length}')
 data['instruction_register_description']['instruction_opcodes'] = {d['instruction_name']: ''.join(d['opcode_list']) for d in data['instruction_register_description']['instruction_opcodes']}
-instruction_opcodes = data['instruction_register_description']['instruction_opcodes']
+instruction_opcodes = {k:int(v, 2) for k,v in data['instruction_register_description']['instruction_opcodes'].items()}
 
 logging.debug('OPCODES:')
 for instr, opcode in instruction_opcodes.items():
     logging.debug(f'  {instr}: {opcode}')
 
 #
-# Generate device TCL
+# Generate device/part TCL
 #
 
 bname = os.path.basename(bsdl_file)
@@ -113,14 +112,17 @@ tcl_dev_file_content += ['# Instruction length']
 tcl_dev_file_content += [f'set {device_name}_IRLEN {ir_length}']
 
 tcl_dev_file_content += ['']
+tcl_dev_file_content += ['# Boundary length']
+tcl_dev_file_content += [f'set {device_name}_BOUNDARY_LENGTH {boundary_length}']
+
+tcl_dev_file_content += ['']
 tcl_dev_file_content += ['# Instruction opcodes']
 for instr, opcode in instruction_opcodes.items():
-    tcl_dev_file_content += [f'set {device_name}_{instr} {opcode}']
+    tcl_dev_file_content += [f'set {device_name}_{instr} {hex(opcode)}']
 
 tcl_dev_file_name = f'{device_name}_dev.tcl'
 with open(tcl_dev_file_name, 'w') as tcl_dev_file:
     tcl_dev_file.write(os.linesep.join(tcl_dev_file_content))
-
 
 
 for log_port_segment in data["logical_port_description"]:

@@ -62,11 +62,10 @@ or in their BDSL files.
 `./example/bscan_dump.tcl`:
 
 ```tcl
-set BSCAN_SAMPLE    0x005
-set BSCAN_LEN       2016
+source EP1AGX90EF1152C6N_dev.tcl
 
-irscan EP1AGX90EF1152C6N.tap $BSCAN_SAMPLE
-drscan EP1AGX90EF1152C6N.tap $BSCAN_LEN 0
+irscan EP1AGX90EF1152C6N.tap $EP1AGX90EF1152_SAMPLE
+drscan EP1AGX90EF1152C6N.tap $EP1AGX90EF1152_BOUNDARY_LENGTH 0
 ```
 
 ### Gather data
