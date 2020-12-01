@@ -7,11 +7,16 @@ import argparse
 import os
 import subprocess
 import logging
-import appdirs
-import bsdl_parser.bsdl2json
  
-
 import pprint
+
+# The directory of this script file.
+__here__ = os.path.dirname(os.path.realpath(__file__))
+__bscan_proc__ = os.path.join(__here__, '..')
+if __name__ == "__main__":
+    sys.path.insert(0, __bscan_proc__)
+
+import bscan_tools.core
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
@@ -50,30 +55,7 @@ all_bregs_list = []
 
 # Merge all BSDL port and pin data into 1 struct
 
-try:
-    # Try to open as bsdl-json-file:
-    with open(bsdl_file) as json_file:
-        data = json.load(json_file)
-except json.decoder.JSONDecodeError:
-    # bsdl_file is an original BSDL file. Let's find in the cache:
-    logging.info(f"{bsdl_file} is not a json file... Lets's find in the cache")
-    bname = os.path.basename(bsdl_file)
-    cachedir = appdirs.user_cache_dir("bscan_proc") 
-    if args.bsdl_cache:
-        cachedir = args.bsdl_cache
-    try:
-        os.mkdir(cachedir)
-    except FileExistsError:
-        pass
-    cached_bsdl_json_file = os.path.abspath(os.path.join(cachedir, f'{bname}.json'))
-    if not os.path.isfile(cached_bsdl_json_file):
-        logging.info(f"{cached_bsdl_json_file} not found in cache... Lets's parse original.")
-        logging.info(f"Calling bsdl2json({bsdl_file}, {cached_bsdl_json_file})")
-        bsdl_parser.bsdl2json.bsdl2json(bsdl_file, cached_bsdl_json_file)
-        
-    with open(cached_bsdl_json_file) as json_file:
-        logging.info(f"{cached_bsdl_json_file} json has found in the cace.")
-        data = json.load(json_file)
+data = bscan_tools.core.load_bsdl(bsdl_file, args.bsdl_cache)
 
 #
 # Fetch IDCODE, instruction length, and instruction opcodes.
