@@ -36,7 +36,7 @@ from the [Intel website](https://www.intel.com/content/www/us/en/programmable/su
 
 * Install requirements by 
 
-    `python3 -m pip install -r requirements.txt`
+    `python -m pip install .`
 
 * Create an OpenOCD file that describes the JTAG chain of the PCB.
 
@@ -56,6 +56,12 @@ The `-expected-id` parameter specifies the JTAG IDCODE of the chips in the JTAG 
 OpenOCD can figure out those values for you with an autoscan. For well documented chips (such
 as Intel FPGAs and CPLDs), you can also find these values in their development documentation
 or in their BDSL files.
+
+Generate device part tcl file:
+
+```sh
+generate_tcl EP1AGX90EF1152.bsdl
+```
 
 * Create an OpenOCD file that prints the boundary scan register contents:
 
@@ -112,7 +118,7 @@ Open On-Chip Debugger
 ### Process Data
 
 ```sh
-./bscan_proc.py EP1AGX90EF1152.bsdl bscan_values.txt > pin_report.txt
+bscan_proc EP1AGX90EF1152.bsdl bscan_values.txt > pin_report.txt
 ```
 
 *If the parsed `EP1AGX90EF1152.bsdl` wasn't already in the local cache 
@@ -203,7 +209,7 @@ H22:PGM[0]
 
 Now rerun with the pin renamings file as a parameter:
 ```
-./bscan_proc.py -r pin_renamings.txt EP1AGX90EF1152.bsdl bscan_values.txt > pin_report.ann.txt
+bscan_proc -r pin_renamings.txt EP1AGX90EF1152.bsdl bscan_values.txt > pin_report.ann.txt
 ```
 
 And you get somethingn like this:
