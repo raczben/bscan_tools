@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 import json
 import fileinput
@@ -56,55 +56,6 @@ all_bregs_list = []
 # Merge all BSDL port and pin data into 1 struct
 
 data = bscan_tools.core.load_bsdl(bsdl_file, args.bsdl_cache)
-
-#
-# Fetch IDCODE, instruction length, and instruction opcodes.
-#
-
-# Based on https://stackoverflow.com/a/3495395/2506522
-data['optional_register_description'] = {k: v for d in data['optional_register_description'] for k, v in d.items()}
-id_code = ''.join(data['optional_register_description']['idcode_register'])
-logging.debug(f'IDCODE: {id_code}')
-ir_length = int(data['instruction_register_description']['instruction_length'])
-logging.debug(f'IRLENGTH: {ir_length}')
-boundary_length = int(data['boundary_scan_register_description']['fixed_boundary_stmts']['boundary_length'])
-logging.debug(f'BOUNDARY_LENGTH: {boundary_length}')
-data['instruction_register_description']['instruction_opcodes'] = {d['instruction_name']: ''.join(d['opcode_list']) for d in data['instruction_register_description']['instruction_opcodes']}
-instruction_opcodes = {k:int(v, 2) for k,v in data['instruction_register_description']['instruction_opcodes'].items()}
-
-logging.debug('OPCODES:')
-for instr, opcode in instruction_opcodes.items():
-    logging.debug(f'  {instr}: {opcode}')
-
-#
-# Generate device/part TCL
-#
-
-bname = os.path.basename(bsdl_file)
-device_name = os.path.splitext(bname)[0]
-tcl_dev_file_content = []
-tcl_dev_file_content += [f'# Generated with bscan_proc from {bsdl_file}']
-
-tcl_dev_file_content += ['']
-tcl_dev_file_content += ['# ID code']
-tcl_dev_file_content += [f'set {device_name}_IDCODE {id_code}']
-
-tcl_dev_file_content += ['']
-tcl_dev_file_content += ['# Instruction length']
-tcl_dev_file_content += [f'set {device_name}_IRLEN {ir_length}']
-
-tcl_dev_file_content += ['']
-tcl_dev_file_content += ['# Boundary length']
-tcl_dev_file_content += [f'set {device_name}_BOUNDARY_LENGTH {boundary_length}']
-
-tcl_dev_file_content += ['']
-tcl_dev_file_content += ['# Instruction opcodes']
-for instr, opcode in instruction_opcodes.items():
-    tcl_dev_file_content += [f'set {device_name}_{instr} {hex(opcode)}']
-
-tcl_dev_file_name = f'{device_name}_dev.tcl'
-with open(tcl_dev_file_name, 'w') as tcl_dev_file:
-    tcl_dev_file.write(os.linesep.join(tcl_dev_file_content))
 
 
 for log_port_segment in data["logical_port_description"]:
